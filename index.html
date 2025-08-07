@@ -82,7 +82,8 @@
                         <label for="concentration-1" class="block text-sm font-medium text-gray-700">濃度</label>
                         <input type="number" id="concentration-1" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
                     </div>
-                    <div class="flex-2 w-full">
+                    <!-- 調整三重複數據的 flex-grow 為 flex-1，使其寬度與其他欄位更平衡 -->
+                    <div class="flex-1 w-full">
                         <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
                         <div class="mt-1 grid grid-cols-3 gap-2">
                             <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
@@ -112,7 +113,7 @@
                         <label for="concentration-2" class="block text-sm font-medium text-gray-700">濃度</label>
                         <input type="number" id="concentration-2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
                     </div>
-                    <div class="flex-2 w-full">
+                    <div class="flex-1 w-full">
                         <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
                         <div class="mt-1 grid grid-cols-3 gap-2">
                             <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
@@ -142,7 +143,7 @@
                         <label for="concentration-3" class="block text-sm font-medium text-gray-700">濃度</label>
                         <input type="number" id="concentration-3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
                     </div>
-                    <div class="flex-2 w-full">
+                    <div class="flex-1 w-full">
                         <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
                         <div class="mt-1 grid grid-cols-3 gap-2">
                             <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
@@ -259,7 +260,7 @@
                             <label for="concentration-${groupCount}" class="block text-sm font-medium text-gray-700">濃度</label>
                             <input type="number" id="concentration-${groupCount}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
                         </div>
-                        <div class="flex-2 w-full">
+                        <div class="flex-1 w-full">
                             <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
                             <div class="mt-1 grid grid-cols-3 gap-2">
                                 <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
