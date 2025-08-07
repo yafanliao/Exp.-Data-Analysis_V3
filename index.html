@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>實驗數據分析 App</title>
+    <!-- 引入 Tailwind CSS 確保響應式設計和美觀 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js for 繪製直方圖 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            color: white;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-white shadow-xl rounded-2xl p-8 space-y-8">
+        <h1 class="text-3xl font-bold text-gray-800 text-center">實驗數據分析 App</h1>
+        <p class="text-gray-500 text-center">
+            請輸入實驗組別、濃度與三重複實驗數據進行分析。
+            您可以選取一個組別作為**對照組 (Control)**。
+        </p>
+
+        <!-- 錯誤或提示訊息視窗 -->
+        <div id="messageBox" class="message-box bg-red-500 hidden"></div>
+
+        <!-- 輸入表單區域 -->
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="instrument" class="block text-sm font-medium text-gray-700">使用的分析儀器</label>
+                    <input type="text" id="instrument" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                </div>
+                <div>
+                    <label for="concUnit" class="block text-sm font-medium text-gray-700">濃度單位</label>
+                    <input type="text" id="concUnit" value="μM" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                </div>
+            </div>
+            
+            <hr class="border-gray-200">
+
+            <!-- 實驗組別數據輸入區域 -->
+            <div id="groupsContainer" class="space-y-4">
+                <!-- 預設第一組別 -->
+                <div class="group-row flex flex-col md:flex-row items-center gap-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex-1 w-full">
+                        <label for="groupName-1" class="block text-sm font-medium text-gray-700">實驗組別名稱</label>
+                        <input type="text" id="groupName-1" value="Control" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-1 w-full">
+                        <label for="concentration-1" class="block text-sm font-medium text-gray-700">濃度</label>
+                        <input type="number" id="concentration-1" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-2 w-full">
+                        <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
+                        <div class="mt-1 grid grid-cols-3 gap-2">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 B">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 C">
+                        </div>
+                    </div>
+                    <div class="flex-none mt-6 md:mt-0">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="controlGroup" value="1" checked class="form-radio text-indigo-600">
+                            <span class="ml-2 text-gray-700 text-sm font-medium">對照組</span>
+                        </label>
+                    </div>
+                    <button onclick="removeRow(this)" class="flex-none p-2 mt-6 md:mt-0 bg-red-500 hover:bg-red-600 text-white rounded-md shadow-sm hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- 新增第二組別 -->
+                <div class="group-row flex flex-col md:flex-row items-center gap-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex-1 w-full">
+                        <label for="groupName-2" class="block text-sm font-medium text-gray-700">實驗組別名稱</label>
+                        <input type="text" id="groupName-2" value="Group 2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-1 w-full">
+                        <label for="concentration-2" class="block text-sm font-medium text-gray-700">濃度</label>
+                        <input type="number" id="concentration-2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-2 w-full">
+                        <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
+                        <div class="mt-1 grid grid-cols-3 gap-2">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 B">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 C">
+                        </div>
+                    </div>
+                    <div class="flex-none mt-6 md:mt-0">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="controlGroup" value="2" class="form-radio text-indigo-600">
+                            <span class="ml-2 text-gray-700 text-sm font-medium">對照組</span>
+                        </label>
+                    </div>
+                    <button onclick="removeRow(this)" class="flex-none p-2 mt-6 md:mt-0 bg-red-500 hover:bg-red-600 text-white rounded-md shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- 新增第三組別 -->
+                <div class="group-row flex flex-col md:flex-row items-center gap-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex-1 w-full">
+                        <label for="groupName-3" class="block text-sm font-medium text-gray-700">實驗組別名稱</label>
+                        <input type="text" id="groupName-3" value="Group 3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-1 w-full">
+                        <label for="concentration-3" class="block text-sm font-medium text-gray-700">濃度</label>
+                        <input type="number" id="concentration-3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                    </div>
+                    <div class="flex-2 w-full">
+                        <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
+                        <div class="mt-1 grid grid-cols-3 gap-2">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 B">
+                            <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 C">
+                        </div>
+                    </div>
+                    <div class="flex-none mt-6 md:mt-0">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="controlGroup" value="3" class="form-radio text-indigo-600">
+                            <span class="ml-2 text-gray-700 text-sm font-medium">對照組</span>
+                        </label>
+                    </div>
+                    <button onclick="removeRow(this)" class="flex-none p-2 mt-6 md:mt-0 bg-red-500 hover:bg-red-600 text-white rounded-md shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 按鈕區 -->
+            <div class="flex flex-col md:flex-row justify-center gap-4 mt-6">
+                <button id="addRowBtn" class="flex-1 md:flex-none px-6 py-3 bg-indigo-500 text-white font-medium rounded-md shadow-md hover:bg-indigo-600 transition duration-150 ease-in-out">
+                    + 新增實驗組別
+                </button>
+                <button id="analyzeBtn" class="flex-1 md:flex-none px-6 py-3 bg-green-500 text-white font-medium rounded-md shadow-md hover:bg-green-600 transition duration-150 ease-in-out">
+                    開始分析
+                </button>
+            </div>
+        </div>
+
+        <!-- 分析結果區 -->
+        <div id="resultsContainer" class="hidden mt-8 space-y-6">
+            <hr class="border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 text-center">分析結果</h2>
+            <div id="resultsSummary" class="bg-gray-50 p-4 rounded-lg border border-gray-200"></div>
+
+            <!-- 結果比較表格 -->
+            <h3 class="text-xl font-semibold text-gray-700 mt-6">數據比較</h3>
+            <div class="overflow-x-auto rounded-lg shadow-sm">
+                <table id="resultsTable" class="min-w-full divide-y divide-gray-200 bg-white">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">實驗組別名稱</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">濃度</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">三重複數據</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">平均值</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標準差</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">相對於對照組</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- 結果行將在此動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 直方圖 -->
+            <h3 class="text-xl font-semibold text-gray-700 mt-6">各組別平均值直方圖</h3>
+            <div class="flex justify-center p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                <canvas id="resultsChart" class="w-full h-96"></canvas>
+            </div>
+        </div>
+
+        <!-- 版權資訊 -->
+        <div class="text-center text-gray-400 text-sm mt-8">
+            <p>&copy; 2024 實驗數據分析 App</p>
+        </div>
+
+    </div>
+
+    <script>
+        // 將主要邏輯包裝在 DOMContentLoaded 事件中，確保所有元素都已載入
+        window.addEventListener('DOMContentLoaded', (event) => {
+            // DOM 元素 references
+            const groupsContainer = document.getElementById('groupsContainer');
+            const addRowBtn = document.getElementById('addRowBtn');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsTableBody = document.querySelector('#resultsTable tbody');
+            const resultsSummary = document.getElementById('resultsSummary');
+            const messageBox = document.getElementById('messageBox');
+            let chart;
+            // 修正：將初始組別計數設定為3
+            let groupCount = 3;
+
+            // 顯示訊息框
+            function showMessage(text, isError = false) {
+                messageBox.textContent = text;
+                messageBox.className = 'message-box show';
+                if (isError) {
+                    messageBox.classList.add('bg-red-500');
+                    messageBox.classList.remove('bg-green-500');
+                } else {
+                    messageBox.classList.add('bg-green-500');
+                    messageBox.classList.remove('bg-red-500');
+                }
+                setTimeout(() => {
+                    messageBox.classList.remove('show');
+                }, 3000);
+            }
+
+            // 動態新增實驗組別輸入列
+            function addRow() {
+                groupCount++;
+                const newRowHtml = `
+                    <div class="group-row flex flex-col md:flex-row items-center gap-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                        <div class="flex-1 w-full">
+                            <label for="groupName-${groupCount}" class="block text-sm font-medium text-gray-700">實驗組別名稱</label>
+                            <input type="text" id="groupName-${groupCount}" value="Group ${groupCount}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                        </div>
+                        <div class="flex-1 w-full">
+                            <label for="concentration-${groupCount}" class="block text-sm font-medium text-gray-700">濃度</label>
+                            <input type="number" id="concentration-${groupCount}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border">
+                        </div>
+                        <div class="flex-2 w-full">
+                            <label class="block text-sm font-medium text-gray-700">三重複數據 (A, B, C)</label>
+                            <div class="mt-1 grid grid-cols-3 gap-2">
+                                <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 A">
+                                <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 B">
+                                <input type="number" step="0.001" class="data-input block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border" placeholder="數據 C">
+                            </div>
+                        </div>
+                        <div class="flex-none mt-6 md:mt-0">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="controlGroup" value="${groupCount}" class="form-radio text-indigo-600">
+                                <span class="ml-2 text-gray-700 text-sm font-medium">對照組</span>
+                            </label>
+                        </div>
+                        <button onclick="removeRow(this)" class="flex-none p-2 mt-6 md:mt-0 bg-red-500 hover:bg-red-600 text-white rounded-md shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        </button>
+                    </div>
+                `;
+                groupsContainer.insertAdjacentHTML('beforeend', newRowHtml);
+            }
+
+            // 移除實驗組別輸入列
+            function removeRow(button) {
+                if (document.querySelectorAll('.group-row').length > 1) {
+                    const row = button.closest('.group-row');
+                    const radio = row.querySelector('input[type="radio"]');
+                    const isControl = radio.checked;
+                    row.remove();
+                    
+                    // 如果移除的是對照組，則自動選擇第一個組別為新的對照組
+                    if (isControl) {
+                        const firstRow = document.querySelector('.group-row');
+                        if (firstRow) {
+                            firstRow.querySelector('input[type="radio"]').checked = true;
+                        }
+                    }
+                } else {
+                    showMessage("至少需要一個實驗組別。", true);
+                }
+            }
+
+            // 處理數據分析
+            function analyzeData() {
+                // 清空舊結果
+                resultsTableBody.innerHTML = '';
+                if (chart) {
+                    chart.destroy();
+                }
+                resultsContainer.classList.add('hidden');
+                resultsSummary.innerHTML = '';
+                
+                const instrument = document.getElementById('instrument').value || '未指定';
+                const concUnit = document.getElementById('concUnit').value || 'NA';
+                
+                // 取得所有實驗組別的數據
+                const groupRows = document.querySelectorAll('.group-row');
+                const data = [];
+                let controlGroupIndex = -1;
+
+                if (groupRows.length === 0) {
+                     showMessage("請至少新增一個實驗組別。", true);
+                     return;
+                }
+
+                groupRows.forEach((row, index) => {
+                    const groupName = row.querySelector(`#groupName-${index + 1}`).value || `Group ${index + 1}`;
+                    const concentration = parseFloat(row.querySelector(`#concentration-${index + 1}`).value);
+                    const dataInputs = Array.from(row.querySelectorAll('.data-input')).map(input => parseFloat(input.value));
+                    const isControl = row.querySelector('input[name="controlGroup"]').checked;
+
+                    // 檢查數據是否有效
+                    if (dataInputs.some(isNaN) || isNaN(concentration) || groupName === '') {
+                        showMessage(`組別 ${index + 1} 輸入不完整，請檢查。`, true);
+                        return; // 跳過此組別
+                    }
+
+                    if (isControl) {
+                        controlGroupIndex = index;
+                    }
+
+                    data.push({ groupName, concentration, dataInputs });
+                });
+
+                // 確保有對照組被選取
+                if (controlGroupIndex === -1) {
+                    showMessage("請選取一個實驗組別作為對照組。", true);
+                    return;
+                }
+
+                // 計算平均值和標準差
+                const analyzedData = data.map(group => {
+                    const mean = group.dataInputs.reduce((sum, val) => sum + val, 0) / group.dataInputs.length;
+                    const variance = group.dataInputs.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (group.dataInputs.length - 1);
+                    const stdDev = Math.sqrt(variance) || 0; // 如果只有一個數據則標準差為0
+                    return { ...group, mean, stdDev };
+                });
+
+                const controlData = analyzedData[controlGroupIndex];
+
+                // 處理數據比較
+                analyzedData.forEach((group, index) => {
+                    let comparison = '';
+                    if (index === controlGroupIndex) {
+                        comparison = '對照組';
+                    } else {
+                        const percentageChange = ((group.mean - controlData.mean) / controlData.mean) * 100;
+                        comparison = `${percentageChange.toFixed(2)}%`;
+                    }
+
+                    const tableRow = `
+                        <tr class="${index === controlGroupIndex ? 'bg-indigo-50 font-semibold' : ''}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${group.groupName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${group.concentration} ${concUnit}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${group.dataInputs.join(', ')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${group.mean.toFixed(4)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${group.stdDev.toFixed(4)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comparison}</td>
+                        </tr>
+                    `;
+                    resultsTableBody.insertAdjacentHTML('beforeend', tableRow);
+                });
+
+                // 繪製直方圖
+                const ctx = document.getElementById('resultsChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: analyzedData.map(d => `${d.groupName} (${d.concentration}${concUnit})`),
+                        datasets: [{
+                            label: '平均值',
+                            data: analyzedData.map(d => d.mean),
+                            backgroundColor: (context) => {
+                                const index = context.dataIndex;
+                                return index === controlGroupIndex ? 'rgba(79, 70, 229, 0.6)' : 'rgba(16, 185, 129, 0.6)';
+                            },
+                            borderColor: (context) => {
+                                const index = context.dataIndex;
+                                return index === controlGroupIndex ? 'rgba(79, 70, 229, 1)' : 'rgba(16, 185, 129, 1)';
+                            },
+                            borderWidth: 1,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '數據強度 (吸光值/螢光值等)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: (tooltipItems) => {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return analyzedData[index].groupName;
+                                    },
+                                    label: (context) => {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toFixed(4);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // 顯示結果總結
+                resultsSummary.innerHTML = `
+                    <p class="text-sm font-semibold">分析儀器: <span class="font-normal">${instrument}</span></p>
+                    <p class="text-sm font-semibold">對照組: <span class="font-normal">${controlData.groupName} (${controlData.concentration} ${concUnit})</span></p>
+                `;
+
+                // 顯示結果區塊
+                resultsContainer.classList.remove('hidden');
+            }
+
+            // 事件監聽
+            addRowBtn.addEventListener('click', addRow);
+            analyzeBtn.addEventListener('click', analyzeData);
+
+            // 確保至少有一行輸入
+            if (document.querySelectorAll('.group-row').length === 0) {
+                addRow();
+            }
+        });
+    </script>
+
+</body>
+</html>
